@@ -8,6 +8,65 @@ from typing import List
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from jogo_mediana import JogoMediana
 
+class GameSelector:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Seletor de Jogos")
+        self.root.geometry("400x300")
+        
+        # Centralizar a janela
+        self.root.update_idletasks()
+        width = self.root.winfo_width()
+        height = self.root.winfo_height()
+        x = (self.root.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.root.winfo_screenheight() // 2) - (height // 2)
+        self.root.geometry(f'{width}x{height}+{x}+{y}')
+        
+        # Frame principal
+        main_frame = ttk.Frame(self.root, padding="20")
+        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        
+        # Título
+        ttk.Label(
+            main_frame,
+            text="Escolha um Jogo",
+            style='Title.TLabel'
+        ).grid(row=0, column=0, pady=(0, 20))
+        
+        # Botões
+        ttk.Button(
+            main_frame,
+            text="Jogo da Mediana",
+            command=self.iniciar_jogo_mediana
+        ).grid(row=1, column=0, pady=10, padx=20, sticky=(tk.W, tk.E))
+        
+        ttk.Button(
+            main_frame,
+            text="Jogo da Contagem de Inversões",
+            command=self.iniciar_jogo_inversoes
+        ).grid(row=2, column=0, pady=10, padx=20, sticky=(tk.W, tk.E))
+        
+        # Configurar grid
+        self.root.columnconfigure(0, weight=1)
+        self.root.rowconfigure(0, weight=1)
+        main_frame.columnconfigure(0, weight=1)
+        
+    def iniciar_jogo_mediana(self):
+        self.root.withdraw()  # Esconde a janela de seleção
+        jogo_window = tk.Toplevel(self.root)
+        app = MedianGameGUI(jogo_window)
+        jogo_window.protocol("WM_DELETE_WINDOW", lambda: self.fechar_jogo(jogo_window))
+        
+    def iniciar_jogo_inversoes(self):
+        self.root.withdraw()  # Esconde a janela de seleção
+        jogo_window = tk.Toplevel(self.root)
+        app = InversionGameGUI(jogo_window)
+        jogo_window.protocol("WM_DELETE_WINDOW", lambda: self.fechar_jogo(jogo_window))
+        
+    def fechar_jogo(self, jogo_window):
+        jogo_window.destroy()
+        self.root.deiconify()  # Mostra a janela de seleção novamente
+
 class MedianGameGUI:
     def __init__(self, root):
         self.root = root
@@ -36,7 +95,9 @@ class MedianGameGUI:
         # Instância do jogo e variáveis
         self.jogo = JogoMediana()
         self.arr_atual = []
+        self.arr_inicial = []  # Armazenar o array inicial
         self.k = 0
+        self.k_inicial = 0  # Armazenar o k inicial
         self.historico_particoes = []
         
         self.criar_interface()
@@ -145,6 +206,7 @@ class MedianGameGUI:
             command=self.mostrar_solucao_algoritmo
         )
         self.solution_button.grid(row=0, column=1, padx=5)
+        self.solution_button.grid_remove()  # Hide the button initially
 
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
@@ -155,11 +217,14 @@ class MedianGameGUI:
         # Gerar array aleatório
         tamanho_array = random.randint(15, 25)
         self.arr_atual = random.sample(range(1, 101), tamanho_array)
+        self.arr_inicial = self.arr_atual.copy()  # Guardar o array inicial
         self.k = random.randint(1, len(self.arr_atual))
+        self.k_inicial = self.k  # Guardar o k inicial
         
         # Resetar contadores e histórico
         self.jogo.particoes_usuario = 0
         self.historico_particoes = []
+        self.solution_button.grid_remove()  # Hide the solution button when starting a new game
         
         # Calcular solução do algoritmo
         arr_temp = self.arr_atual.copy()
@@ -211,6 +276,8 @@ class MedianGameGUI:
                     f"Você encontrou o {self.k}-ésimo menor elemento: {pivo}\n" +
                     f"Número de partições realizadas: {self.jogo.particoes_usuario}\n" +
                     f"Algoritmo da Mediana das Medianas: {self.jogo.particoes_algoritmo} partições")
+                self.solution_button.grid()  # Movido para depois do messagebox
+                self.info_label.config(text="Parabéns! Você encontrou o elemento correto. Clique em 'Ver Solução' para ver os passos do algoritmo.")
             elif len(esquerda) > self.k - 1:
                 self.adicionar_ao_historico(pivo, "Muitos elementos à esquerda →")
                 self.info_label.config(text="Muitos elementos do lado esquerdo. Vamos continuar com a partição esquerda.")
@@ -230,29 +297,42 @@ class MedianGameGUI:
             messagebox.showerror("Erro", "Por favor, digite um número válido!")
             
     def mostrar_solucao_algoritmo(self):
-        if not self.arr_atual:
+        if not self.arr_inicial:  # Verifica o array inicial em vez do atual
             messagebox.showwarning("Aviso", "Inicie um novo jogo primeiro!")
             return
             
-        # Executar o algoritmo da mediana das medianas
-        arr_temp = self.arr_atual.copy()
-        k_temp = self.k
+        # Executar o algoritmo da mediana das medianas com o array e k iniciais
+        arr_temp = self.arr_inicial.copy()
+        k_temp = self.k_inicial
         passos = []
+        max_iteracoes = 100  # Evitar loop infinito
+        iteracoes = 0
         
-        while True:
-            pivo, esquerda, direita = self.jogo.encontrar_mediana_das_medianas(arr_temp, k_temp)
-            passos.append(f"Pivô escolhido: {pivo}")
-            
-            if len(esquerda) == k_temp - 1:
-                passos.append(f"Elemento encontrado: {pivo}")
-                break
-            elif len(esquerda) > k_temp - 1:
-                passos.append("Continuando com a partição esquerda")
-                arr_temp = esquerda
-            else:
-                passos.append("Continuando com a partição direita")
-                k_temp = k_temp - len(esquerda) - 1
-                arr_temp = direita
+        try:
+            while iteracoes < max_iteracoes:
+                iteracoes += 1
+                if not arr_temp:  # Se o array estiver vazio
+                    break
+                    
+                pivo, esquerda, direita = self.jogo.encontrar_mediana_das_medianas(arr_temp, k_temp)
+                passos.append(f"Pivô escolhido: {pivo}")
+                
+                if len(esquerda) == k_temp - 1:
+                    passos.append(f"Elemento encontrado: {pivo}")
+                    break
+                elif len(esquerda) > k_temp - 1:
+                    passos.append("Continuando com a partição esquerda")
+                    arr_temp = esquerda
+                else:
+                    passos.append("Continuando com a partição direita")
+                    k_temp = k_temp - len(esquerda) - 1
+                    arr_temp = direita
+                    
+                if not arr_temp:  # Se o array ficar vazio
+                    break
+        except Exception as e:
+            messagebox.showerror("Erro", f"Ocorreu um erro ao executar o algoritmo: {str(e)}")
+            return
         
         # Mostrar os passos em uma nova janela
         solucao_window = tk.Toplevel(self.root)
@@ -285,7 +365,162 @@ class MedianGameGUI:
             command=solucao_window.destroy
         ).pack(pady=10)
 
+class InversionGameGUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Jogo da Contagem de Inversões")
+        self.root.geometry("1000x800")
+        
+        # Cores e estilos
+        self.cores = {
+            'bg_principal': '#f0f0f0',
+            'bg_frame': '#ffffff',
+            'destaque': '#4a90e2',
+            'texto': '#333333',
+            'sucesso': '#2ecc71',
+            'erro': '#e74c3c'
+        }
+        
+        # Configurar tema
+        self.root.configure(bg=self.cores['bg_principal'])
+        self.style = ttk.Style()
+        self.style.configure('Frame.TFrame', background=self.cores['bg_frame'])
+        self.style.configure('TButton', padding=10, font=('Helvetica', 11))
+        self.style.configure('TLabel', font=('Helvetica', 11), background=self.cores['bg_frame'])
+        self.style.configure('Title.TLabel', font=('Helvetica', 24, 'bold'))
+        
+        # Variáveis do jogo
+        self.array_atual = []
+        self.tentativas = 0
+        self.resposta_correta = 0
+        
+        self.criar_interface()
+        
+    def criar_interface(self):
+        # Container principal centralizado
+        self.main_container = ttk.Frame(self.root, padding="20", style='Frame.TFrame')
+        self.main_container.place(relx=0.5, rely=0.5, anchor="center")
+        
+        # Título
+        ttk.Label(
+            self.main_container,
+            text="Jogo da Contagem de Inversões",
+            style='Title.TLabel'
+        ).grid(row=0, column=0, pady=(0, 20))
+        
+        # Array atual
+        self.array_label = ttk.Label(
+            self.main_container,
+            text="",
+            wraplength=600,
+            justify="center"
+        )
+        self.array_label.grid(row=1, column=0, pady=(0, 20))
+        
+        # Frame para entrada e botão
+        input_frame = ttk.Frame(self.main_container)
+        input_frame.grid(row=2, column=0, pady=(0, 20))
+        
+        ttk.Label(
+            input_frame,
+            text="Número de inversões:"
+        ).grid(row=0, column=0, padx=5)
+        
+        self.resposta_entry = ttk.Entry(input_frame, width=10)
+        self.resposta_entry.grid(row=0, column=1, padx=5)
+        
+        ttk.Button(
+            input_frame,
+            text="Verificar",
+            command=self.verificar_resposta
+        ).grid(row=0, column=2, padx=5)
+        
+        # Resultado
+        self.resultado_label = ttk.Label(
+            self.main_container,
+            text="",
+            wraplength=600,
+            justify="center"
+        )
+        self.resultado_label.grid(row=3, column=0, pady=(0, 20))
+        
+        # Botão novo jogo
+        ttk.Button(
+            self.main_container,
+            text="Novo Jogo",
+            command=self.novo_jogo
+        ).grid(row=4, column=0)
+        
+        self.novo_jogo()
+        
+    def novo_jogo(self):
+        # Gerar array aleatório
+        tamanho = random.randint(5, 8)
+        self.array_atual = random.sample(range(1, 21), tamanho)
+        self.resposta_correta, _ = sort_and_count(self.array_atual.copy())
+        self.tentativas = 0
+        
+        self.array_label.config(
+            text=f"Array: {self.array_atual}\n\nQuantas inversões existem neste array?"
+        )
+        self.resultado_label.config(text="")
+        self.resposta_entry.delete(0, tk.END)
+        
+    def verificar_resposta(self):
+        try:
+            resposta = int(self.resposta_entry.get())
+            self.tentativas += 1
+            
+            if resposta == self.resposta_correta:
+                self.resultado_label.config(
+                    text=f"Parabéns! Você acertou em {self.tentativas} tentativa(s)!\n"
+                         f"O array tem {self.resposta_correta} inversões."
+                )
+            else:
+                dica = "Tente um número maior!" if resposta < self.resposta_correta else "Tente um número menor!"
+                self.resultado_label.config(
+                    text=f"Incorreto. {dica}\nTentativa {self.tentativas}"
+                )
+                
+        except ValueError:
+            messagebox.showerror("Erro", "Por favor, digite um número válido!")
+
+def sort_and_count(arr):
+    if len(arr) <= 1:
+        return 0, arr
+    
+    meio = len(arr) // 2
+    esquerda = arr[:meio]
+    direita = arr[meio:]
+    
+    inv_esquerda, esquerda = sort_and_count(esquerda)
+    inv_direita, direita = sort_and_count(direita)
+    
+    inv_split, arr = count_split_inversions(esquerda, direita)
+    
+    return inv_esquerda + inv_direita + inv_split, arr
+
+def count_split_inversions(esquerda, direita):
+    inv_count = 0
+    resultado = []
+    
+    i = j = 0
+    
+    while i < len(esquerda) and j < len(direita):
+        if esquerda[i] <= direita[j]:
+            resultado.append(esquerda[i])
+            i += 1
+        else:
+            resultado.append(direita[j])
+            inv_count += len(esquerda) - i
+            j += 1
+            
+    resultado += esquerda[i:]
+    resultado += direita[j:]
+    
+    return inv_count, resultado
+
 if __name__ == "__main__":
     root = tk.Tk()
-    app = MedianGameGUI(root)
+    app = GameSelector(root)
     root.mainloop()

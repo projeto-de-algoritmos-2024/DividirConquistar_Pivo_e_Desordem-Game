@@ -7,10 +7,13 @@ class JogoMediana:
         self.particoes_algoritmo = 0
         
     def encontrar_mediana_das_medianas(self, arr: List[int], k: int) -> Tuple[int, List[int], List[int]]:
+        self.particoes_algoritmo += 1
  
         if len(arr) <= 5:
             arr_ordenado = sorted(arr)
-            pivo = arr_ordenado[k-1]
+            if not arr_ordenado:  # Se o array estiver vazio
+                return 0, [], []
+            pivo = arr_ordenado[min(k-1, len(arr_ordenado)-1)]  # Garantir que o índice não ultrapasse o tamanho do array
             esquerda = [x for x in arr if x < pivo]
             direita = [x for x in arr if x > pivo]
             return pivo, esquerda, direita
@@ -39,11 +42,9 @@ class JogoMediana:
         if len(esquerda) == k - 1:
             return pivo, esquerda, direita
         elif len(esquerda) > k - 1:
-            self.particoes_algoritmo += 1
             novo_pivo, nova_esquerda, nova_direita = self.encontrar_mediana_das_medianas(esquerda, k)
             return novo_pivo, nova_esquerda, nova_direita
         else:
-            self.particoes_algoritmo += 1
             novo_k = k - len(esquerda) - 1
             novo_pivo, nova_esquerda, nova_direita = self.encontrar_mediana_das_medianas(direita, novo_k)
             return novo_pivo, nova_esquerda, nova_direita
