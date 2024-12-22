@@ -5,9 +5,9 @@ class JogoMediana:
     def __init__(self):
         self.particoes_usuario = 0
         self.particoes_algoritmo = 0
-    
-    def encontrar_mediana_das_medianas(self, arr: List[int], k: int) -> Tuple[int, List[int], List[int]]:
         
+    def encontrar_mediana_das_medianas(self, arr: List[int], k: int) -> Tuple[int, List[int], List[int]]:
+ 
         if len(arr) <= 5:
             arr_ordenado = sorted(arr)
             pivo = arr_ordenado[k-1]
@@ -15,45 +15,44 @@ class JogoMediana:
             direita = [x for x in arr if x > pivo]
             return pivo, esquerda, direita
 
+        # Passo 1: Dividir array em grupos de 5
         grupos = [arr[i:i+5] for i in range(0, len(arr), 5)]
         
+        # Passo 2: Encontrar mediana de cada grupo
         medianas = []
         for grupo in grupos:
             grupo_ordenado = sorted(grupo)
             indice_mediana = (len(grupo) - 1) // 2
             medianas.append(grupo_ordenado[indice_mediana])
         
+        # Passo 3: Encontrar recursivamente a mediana das medianas
         if len(medianas) <= 5:
             pivo = sorted(medianas)[len(medianas)//2]
         else:
             pivo, _, _ = self.encontrar_mediana_das_medianas(medianas, len(medianas)//2 + 1)
         
+        # Passo 4: Particionar ao redor do pivô
         esquerda = [x for x in arr if x < pivo]
         direita = [x for x in arr if x > pivo]
         
-        return pivo, esquerda, direita
+        # Passo 5: Encontrar recursivamente o k-ésimo elemento
+        if len(esquerda) == k - 1:
+            return pivo, esquerda, direita
+        elif len(esquerda) > k - 1:
+            self.particoes_algoritmo += 1
+            novo_pivo, nova_esquerda, nova_direita = self.encontrar_mediana_das_medianas(esquerda, k)
+            return novo_pivo, nova_esquerda, nova_direita
+        else:
+            self.particoes_algoritmo += 1
+            novo_k = k - len(esquerda) - 1
+            novo_pivo, nova_esquerda, nova_direita = self.encontrar_mediana_das_medianas(direita, novo_k)
+            return novo_pivo, nova_esquerda, nova_direita
 
     def particionar_com_pivo_usuario(self, arr: List[int], pivo: int) -> Tuple[List[int], List[int]]:
         """Particiona o array ao redor do pivô escolhido pelo usuário"""
         esquerda = [x for x in arr if x < pivo]
         direita = [x for x in arr if x > pivo]
         return esquerda, direita
-
-    def executar_algoritmo(self, arr: List[int], k: int) -> None:
-        """Executa o algoritmo da mediana das medianas para comparação"""
-        arr_copia = arr.copy()
-        
-        while True:
-            pivo, esquerda, direita = self.encontrar_mediana_das_medianas(arr_copia, k)
-            self.particoes_algoritmo += 1
-            
-            if len(esquerda) == k - 1:
-                break
-            elif len(esquerda) > k - 1:
-                arr_copia = esquerda
-            else:
-                k = k - len(esquerda) - 1
-                arr_copia = direita
 
     def jogar(self):
         # Gerar array aleatório
@@ -65,7 +64,7 @@ class JogoMediana:
         print(f"\nArray: {arr}")
         print(f"Tarefa: Encontre o {k}-ésimo menor elemento")
         
-        # Resetar contadores
+        # Resetar contadores de partições
         self.particoes_usuario = 0
         self.particoes_algoritmo = 0
         
@@ -96,11 +95,10 @@ class JogoMediana:
             except ValueError:
                 print("Por favor, digite um número válido!")
         
-        # Executar algoritmo para comparação
+        # Vez do algoritmo
         print("\nAgora vamos ver como o algoritmo da Mediana das Medianas se sai...")
-        self.executar_algoritmo(arr, k)
+        pivo, _, _ = self.encontrar_mediana_das_medianas(arr.copy(), k)
         
-        # Mostrar resultados
         print(f"\nResultados:")
         print(f"Sua solução precisou de {self.particoes_usuario} partições")
         print(f"A Mediana das Medianas precisou de {self.particoes_algoritmo} partições")
