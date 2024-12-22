@@ -19,3 +19,24 @@ def merge_and_count(left, right):
 
     return inversions, merged
 
+def sort_and_count(arr):
+    # Caso base: lista com um único elemento
+    if len(arr) <= 1:
+        return 0, arr
+
+    # Divide a lista ao meio
+    mid = len(arr) // 2
+    left = arr[:mid]
+    right = arr[mid:]
+
+    # Conta as inversões nas duas metades
+    left_inversions, sorted_left = sort_and_count(left)
+    right_inversions, sorted_right = sort_and_count(right)
+
+    # Conta as inversões entre as duas metades e as une
+    split_inversions, sorted_arr = merge_and_count(sorted_left, sorted_right)
+
+    # Soma todas as inversões
+    total_inversions = left_inversions + right_inversions + split_inversions
+
+    return total_inversions, sorted_arr
