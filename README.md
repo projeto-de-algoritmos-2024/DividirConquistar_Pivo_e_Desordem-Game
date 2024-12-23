@@ -25,6 +25,10 @@ Este projeto contém dois jogos educativos que ajudam a entender conceitos funda
    - Visualize todas as inversões após acertar
    - Entenda como o algoritmo MergeSort pode ser usado para contar inversões
 
+## Vídeo do Projeto
+
+[https://youtu.be/fgNd85fOLXM](https://www.youtube.com/watch?v=fgNd85fOLXM) <br>
+
 ## Screenshots
 
 ### Ao iniciar a aplicação, é necessário escolher um dos dois jogos:
