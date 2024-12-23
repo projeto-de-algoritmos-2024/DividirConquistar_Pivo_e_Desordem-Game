@@ -25,10 +25,6 @@ Este projeto contém dois jogos educativos que ajudam a entender conceitos funda
    - Visualize todas as inversões após acertar
    - Entenda como o algoritmo MergeSort pode ser usado para contar inversões
 
-## Vídeo do Projeto
-
-[https://youtu.be/fgNd85fOLXM](https://www.youtube.com/watch?v=fgNd85fOLXM) <br>
-
 ## Screenshots
 
 ### Ao iniciar a aplicação, é necessário escolher um dos dois jogos:
@@ -93,3 +89,5 @@ python interface_game.py
 ## Vídeo de Apresentação do Projeto
 
 Contempla-se para o projeto, um vídeo que faz a apresentação do projeto Divisão & Conquista explicando os algoritmos usados e a interface desenvolvida:
+
+[https://youtu.be/fgNd85fOLXM](https://www.youtube.com/watch?v=fgNd85fOLXM)
