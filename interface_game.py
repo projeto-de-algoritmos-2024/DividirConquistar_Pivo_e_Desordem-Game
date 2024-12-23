@@ -7,6 +7,7 @@ from typing import List
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from jogo_mediana import JogoMediana
+from game_contagemInversao import JogoContagemInversao
 
 class GameSelector:
     def __init__(self, root):
@@ -271,7 +272,7 @@ class MedianGameGUI:
             )
             
             if len(esquerda) == self.k - 1:
-                self.adicionar_ao_historico(pivo, "CORRETO! ✓")
+                self.adicionar_ao_historico(pivo, "CORRETO! ")
                 messagebox.showinfo("Parabéns!", 
                     f"Você encontrou o {self.k}-ésimo menor elemento: {pivo}\n" +
                     f"Número de partições realizadas: {self.jogo.particoes_usuario}\n" +
@@ -389,13 +390,11 @@ class InversionGameGUI:
         self.style.configure('TLabel', font=('Helvetica', 11), background=self.cores['bg_frame'])
         self.style.configure('Title.TLabel', font=('Helvetica', 24, 'bold'))
         
-        # Variáveis do jogo
-        self.array_atual = []
-        self.tentativas = 0
-        self.resposta_correta = 0
+        # Instância do jogo
+        self.jogo = JogoContagemInversao()
         
         self.criar_interface()
-        
+
     def criar_interface(self):
         # Container principal centralizado
         self.main_container = ttk.Frame(self.root, padding="20", style='Frame.TFrame')
@@ -426,8 +425,8 @@ class InversionGameGUI:
             text="Número de inversões:"
         ).grid(row=0, column=0, padx=5)
         
-        self.resposta_entry = ttk.Entry(input_frame, width=10)
-        self.resposta_entry.grid(row=0, column=1, padx=5)
+        self.entrada_resposta = ttk.Entry(input_frame, width=10)
+        self.entrada_resposta.grid(row=0, column=1, padx=5)
         
         ttk.Button(
             input_frame,
@@ -454,71 +453,24 @@ class InversionGameGUI:
         self.novo_jogo()
         
     def novo_jogo(self):
-        # Gerar array aleatório
-        tamanho = random.randint(5, 8)
-        self.array_atual = random.sample(range(1, 21), tamanho)
-        self.resposta_correta, _ = sort_and_count(self.array_atual.copy())
-        self.tentativas = 0
-        
-        self.array_label.config(
-            text=f"Array: {self.array_atual}\n\nQuantas inversões existem neste array?"
-        )
-        self.resultado_label.config(text="")
-        self.resposta_entry.delete(0, tk.END)
-        
+        self.array_atual = self.jogo.novo_jogo()
+        self.atualizar_interface()
+
     def verificar_resposta(self):
         try:
-            resposta = int(self.resposta_entry.get())
-            self.tentativas += 1
-            
-            if resposta == self.resposta_correta:
-                self.resultado_label.config(
-                    text=f"Parabéns! Você acertou em {self.tentativas} tentativa(s)!\n"
-                         f"O array tem {self.resposta_correta} inversões."
-                )
+            resposta = int(self.entrada_resposta.get())
+            if self.jogo.verificar_resposta(resposta):
+                messagebox.showinfo("Correto!", f"Parabéns! Você acertou em {self.jogo.tentativas} tentativas!")
+                self.novo_jogo()
             else:
-                dica = "Tente um número maior!" if resposta < self.resposta_correta else "Tente um número menor!"
-                self.resultado_label.config(
-                    text=f"Incorreto. {dica}\nTentativa {self.tentativas}"
-                )
-                
+                messagebox.showwarning("Incorreto", "Tente novamente!")
         except ValueError:
-            messagebox.showerror("Erro", "Por favor, digite um número válido!")
+            messagebox.showerror("Erro", "Por favor, insira um número válido!")
 
-def sort_and_count(arr):
-    if len(arr) <= 1:
-        return 0, arr
-    
-    meio = len(arr) // 2
-    esquerda = arr[:meio]
-    direita = arr[meio:]
-    
-    inv_esquerda, esquerda = sort_and_count(esquerda)
-    inv_direita, direita = sort_and_count(direita)
-    
-    inv_split, arr = count_split_inversions(esquerda, direita)
-    
-    return inv_esquerda + inv_direita + inv_split, arr
-
-def count_split_inversions(esquerda, direita):
-    inv_count = 0
-    resultado = []
-    
-    i = j = 0
-    
-    while i < len(esquerda) and j < len(direita):
-        if esquerda[i] <= direita[j]:
-            resultado.append(esquerda[i])
-            i += 1
-        else:
-            resultado.append(direita[j])
-            inv_count += len(esquerda) - i
-            j += 1
-            
-    resultado += esquerda[i:]
-    resultado += direita[j:]
-    
-    return inv_count, resultado
+    def atualizar_interface(self):
+        self.array_label.config(text=f"Array: {self.array_atual}\n\nQuantas inversões existem neste array?")
+        self.resultado_label.config(text="")
+        self.entrada_resposta.delete(0, tk.END)
 
 if __name__ == "__main__":
     root = tk.Tk()
