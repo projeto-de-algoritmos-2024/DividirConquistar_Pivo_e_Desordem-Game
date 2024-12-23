@@ -61,3 +61,12 @@ class JogoContagemInversao:
         total_inversions = left_inversions + right_inversions + split_inversions
 
         return total_inversions, sorted_arr
+
+    def obter_todas_inversoes(self):
+        inversoes = []
+        arr = self.array_atual
+        for i in range(len(arr)):
+            for j in range(i + 1, len(arr)):
+                if arr[i] > arr[j]:
+                    inversoes.append((arr[i], arr[j]))
+        return inversoes

@@ -392,13 +392,14 @@ class InversionGameGUI:
         
         # Instância do jogo
         self.jogo = JogoContagemInversao()
+        self.mostrar_inversoes_button = None
         
         self.criar_interface()
 
     def criar_interface(self):
         # Container principal centralizado
         self.main_container = ttk.Frame(self.root, padding="20", style='Frame.TFrame')
-        self.main_container.place(relx=0.5, rely=0.5, anchor="center")
+        self.main_container.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
         # Título
         ttk.Label(
@@ -407,18 +408,18 @@ class InversionGameGUI:
             style='Title.TLabel'
         ).grid(row=0, column=0, pady=(0, 20))
         
-        # Array atual
+        # Array e instruções
         self.array_label = ttk.Label(
             self.main_container,
             text="",
-            wraplength=600,
-            justify="center"
+            wraplength=800,
+            justify=tk.CENTER
         )
-        self.array_label.grid(row=1, column=0, pady=(0, 20))
+        self.array_label.grid(row=1, column=0, pady=20)
         
         # Frame para entrada e botão
-        input_frame = ttk.Frame(self.main_container)
-        input_frame.grid(row=2, column=0, pady=(0, 20))
+        input_frame = ttk.Frame(self.main_container, style='Frame.TFrame')
+        input_frame.grid(row=2, column=0, pady=10)
         
         ttk.Label(
             input_frame,
@@ -438,22 +439,32 @@ class InversionGameGUI:
         self.resultado_label = ttk.Label(
             self.main_container,
             text="",
-            wraplength=600,
-            justify="center"
+            wraplength=800,
+            justify=tk.CENTER
         )
-        self.resultado_label.grid(row=3, column=0, pady=(0, 20))
+        self.resultado_label.grid(row=3, column=0, pady=20)
         
-        # Botão novo jogo
-        ttk.Button(
+        # Botão para mostrar inversões (inicialmente desabilitado)
+        self.mostrar_inversoes_button = ttk.Button(
             self.main_container,
-            text="Novo Jogo",
-            command=self.novo_jogo
-        ).grid(row=4, column=0)
+            text="Mostrar Todas as Inversões",
+            command=self.mostrar_inversoes,
+            state='disabled'
+        )
+        self.mostrar_inversoes_button.grid(row=4, column=0, pady=10)
         
+        # Configurar grid
+        self.root.columnconfigure(0, weight=1)
+        self.root.rowconfigure(0, weight=1)
+        self.main_container.columnconfigure(0, weight=1)
+        
+        # Iniciar jogo
         self.novo_jogo()
-        
+
     def novo_jogo(self):
         self.array_atual = self.jogo.novo_jogo()
+        if self.mostrar_inversoes_button:
+            self.mostrar_inversoes_button.config(state='disabled')
         self.atualizar_interface()
 
     def verificar_resposta(self):
@@ -461,11 +472,21 @@ class InversionGameGUI:
             resposta = int(self.entrada_resposta.get())
             if self.jogo.verificar_resposta(resposta):
                 messagebox.showinfo("Correto!", f"Parabéns! Você acertou em {self.jogo.tentativas} tentativas!")
-                self.novo_jogo()
+                self.mostrar_inversoes_button.config(state='normal')
+                self.resultado_label.config(
+                    text="Você acertou! Clique no botão abaixo para ver todas as inversões."
+                )
             else:
                 messagebox.showwarning("Incorreto", "Tente novamente!")
         except ValueError:
             messagebox.showerror("Erro", "Por favor, insira um número válido!")
+
+    def mostrar_inversoes(self):
+        inversoes = self.jogo.obter_todas_inversoes()
+        texto_inversoes = "\nTodas as inversões encontradas:\n\n"
+        for i, (maior, menor) in enumerate(inversoes, 1):
+            texto_inversoes += f"{i}. ({maior}, {menor})\n"
+        self.resultado_label.config(text=texto_inversoes)
 
     def atualizar_interface(self):
         self.array_label.config(text=f"Array: {self.array_atual}\n\nQuantas inversões existem neste array?")
